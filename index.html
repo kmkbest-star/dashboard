@@ -30,7 +30,6 @@
         .fetch-btn:hover { background: #0056b3; }
         .fetch-btn:disabled { background: #ccc; cursor: not-allowed; }
 
-        /* 처음으로 돌아가기 버튼 디자인 */
         .reset-btn {
             padding: 10px 20px; background: #6c757d; color: white; border: none;
             border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
@@ -43,7 +42,8 @@
         .summary-card h4 { margin: 0 0 5px 0; font-size: 13px; opacity: 0.9; }
         .summary-card div { font-size: 18px; font-weight: bold; }
 
-        .tab-container { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab-area-wrapper { display: flex; align-items: flex-end; margin-bottom: 15px; }
+        .tab-container { display: flex; gap: 10px; margin-bottom: 0; }
         .tab-btn { 
             padding: 10px 20px; background: #fff; border: 1px solid #ddd; border-radius: 6px 6px 0 0;
             cursor: pointer; font-size: 14px; font-weight: 600; color: #666; transition: 0.2s;
@@ -166,11 +166,12 @@
 
 <div class="main-content">
     <div class="fixed-header">
-        <h2 id="dashboardTitle">매출분석 (상위 10위)</h2>
+        <h2 id="dashboardTitle">매출분석</h2>
         
         <div class="api-fetch-zone" id="fetchZone">
             <p style="margin:0 0 10px 0; color:#555; font-size:14px;">분석할 세부품명을 선택하세요.</p>
             <div class="btn-group">
+                <button class="fetch-btn" onclick="fetchData('영상정보디스플레이장치')">영상정보디스플레이장치 가져오기</button>
                 <button class="fetch-btn" onclick="fetchData('안내전광판')">안내전광판 가져오기</button>
                 <button class="fetch-btn" onclick="fetchData('기상전광판')">기상전광판 가져오기</button>
             </div>
@@ -184,24 +185,27 @@
 
         <div class="summary-container" id="summaryView" style="display:none;">
             <div class="summary-card">
-                <h4>전체 기간 매출 (MAS)</h4>
-                <div id="totalSalesSum">0원</div>
+                <h4>데이터 분석 기간</h4>
+                <div id="analysisPeriod">-</div>
             </div>
             <div class="summary-card">
                 <h4>매출 발생 업체 수</h4>
                 <div id="totalCompanyCount">0개</div>
             </div>
             <div class="summary-card">
-                <h4>데이터 분석 기간</h4>
-                <div id="analysisPeriod">-</div>
+                <h4>전체 기간 매출 (MAS)</h4>
+                <div id="totalSalesSum">0원</div>
             </div>
         </div>
 
-        <div class="tab-container" id="tabContainer" style="display:none;">
-            <button class="tab-btn active" onclick="switchTab('monthly')">월별 분석</button>
-            <button class="tab-btn" onclick="switchTab('quarterly')">분기별 분석</button>
-            <button class="tab-btn" onclick="switchTab('yearly')">연도별 분석</button>
-            <button class="tab-btn" onclick="switchTab('search')">업체검색</button>
+        <div class="tab-area-wrapper">
+            <div class="tab-container" id="tabContainer" style="display:none;">
+                <button class="tab-btn active" onclick="switchTab('monthly')">월별 분석</button>
+                <button class="tab-btn" onclick="switchTab('quarterly')">분기별 분석</button>
+                <button class="tab-btn" onclick="switchTab('yearly')">연도별 분석</button>
+                <button class="tab-btn" onclick="switchTab('search')">업체검색</button>
+            </div>
+            <div id="tabPeriodTotalBox" class="month-total-box" style="display: none; margin-left: auto; text-align: left;">해당 기간 전체 매출: 0원</div>
         </div>
     </div>
 
@@ -232,6 +236,20 @@
         <div id="searchTab" class="tab-content">
             <div class="search-box">
                 <h3 style="margin-top:0; font-size: 16px;">업체명 검색</h3>
+                
+                <div class="search-date-filter" style="margin-bottom: 15px; font-size: 14px;">
+                    <label style="margin-right: 15px;">
+                        <input type="radio" name="searchDateRange" value="all" checked onchange="toggleSearchDate()"> 전체 기간
+                    </label>
+                    <label>
+                        <input type="radio" name="searchDateRange" value="custom" onchange="toggleSearchDate()"> 데이터 분석 기간 입력
+                    </label>
+                    <div id="customDateWrapper" style="display: none; margin-top: 10px;">
+                        <input type="date" id="searchStartDate" class="search-input" style="padding: 8px; width: auto; font-size: 13px;"> ~ 
+                        <input type="date" id="searchEndDate" class="search-input" style="padding: 8px; width: auto; font-size: 13px;">
+                    </div>
+                </div>
+
                 <div class="search-input-group">
                     <div class="search-input-wrapper">
                         <input type="text" class="search-input" id="companySearchInput" placeholder="업체명을 입력하세요" autocomplete="off" onkeypress="if(event.key==='Enter') searchCompany()">
@@ -247,6 +265,7 @@
 
 <script>
 const API_ENDPOINTS = {
+    '영상정보디스플레이장치': 'https://script.google.com/macros/s/AKfycbzOw5M6Q36IoA_01w5MpeNRYZG8xm9emToz0sRZVTH9qDICcfwSlI7bpmYX3VN-LZlqHg/exec',
     '안내전광판': 'https://script.google.com/macros/s/AKfycbyd98RkQBj6xVw0sWGltcHuCc85zEn_0RASVCpaxb6XgdLUjuouJY2JIiY3PD71AGg/exec',
     '기상전광판': 'https://script.google.com/macros/s/AKfycbzLmq6EDfI1jzdae8jZcjrNqLpXV4aUdcsqQg_Cy_lUZOYgrQUXO2yGGloybM6OVBS4/exec'
 };
@@ -270,17 +289,41 @@ let companyDic = [];
 
 const pastelClasses = ['pastel-red', 'pastel-blue', 'pastel-green', 'pastel-orange'];
 
-// 상태를 초기화하고 첫 화면으로 돌아가는 함수
+// 2차원 배열 데이터를 항목명(헤더)을 Key로 가지는 객체 배열로 변환
+function normalizeToObjects(data) {
+    if (!Array.isArray(data) || data.length === 0) return [];
+    
+    // 이미 객체 배열인 경우 그대로 반환
+    if (!Array.isArray(data[0]) && typeof data[0] === 'object') {
+        return data;
+    }
+
+    // 2차원 배열인 경우 첫 번째 행을 항목명(Key)으로 사용
+    const headers = data[0].map(h => String(h).trim());
+    const result = [];
+    for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row) continue;
+        const obj = {};
+        for (let j = 0; j < headers.length; j++) {
+            obj[headers[j]] = row[j];
+        }
+        result.push(obj);
+    }
+    return result;
+}
+
 function resetApp() {
     document.getElementById('fetchZone').style.display = 'block';
     document.getElementById('resetZone').style.display = 'none';
     
     document.getElementById('summaryView').style.display = 'none';
     document.getElementById('tabContainer').style.display = 'none';
+    document.getElementById('tabPeriodTotalBox').style.display = 'none';
     document.getElementById('specialView').style.display = 'none';
     
     document.getElementById('message').innerText = '';
-    document.getElementById('dashboardTitle').innerText = '매출분석 (상위 10위)';
+    document.getElementById('dashboardTitle').innerText = '매출분석';
     document.getElementById('sidebarTitle').innerText = '조회 기간 선택';
     document.getElementById('timeSelector').innerHTML = '';
     
@@ -314,7 +357,7 @@ async function fetchData(category) {
     btns.forEach(btn => btn.disabled = true);
     msg.style.color = '#007bff';
     msg.innerText = `${category} 데이터를 구글 서버에서 가져오는 중입니다... (약 10~30초 소요)`;
-    document.getElementById('dashboardTitle').innerText = `${category} 매출분석 (상위 10위)`;
+    document.getElementById('dashboardTitle').innerText = `${category} 매출분석`;
 
     try {
         const url = API_ENDPOINTS[category] + '?t=' + new Date().getTime();
@@ -329,16 +372,16 @@ async function fetchData(category) {
             throw new Error("유효한 데이터가 없습니다.");
         }
 
-        rawDataRows = data;
-        processExcelData(data);
+        // 엑셀 열 인덱스가 아닌 항목명(객체) 기준으로 데이터 정규화
+        rawDataRows = normalizeToObjects(data);
+        processExcelData(rawDataRows);
         
-        // 데이터 로딩 성공 시 UI 전환 및 탭 세팅
         document.getElementById('fetchZone').style.display = 'none';
         document.getElementById('resetZone').style.display = 'flex';
         document.getElementById('currentCategoryLabel').innerText = `현재 분석 중: ${category}`;
         document.getElementById('tabContainer').style.display = 'flex';
         
-        switchTab('monthly'); // 첫 화면을 월별 분석으로 고정
+        switchTab('monthly');
         
     } catch (error) {
         console.error(error);
@@ -353,7 +396,6 @@ function switchTab(tabName) {
     currentTab = tabName;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     
-    // 버튼을 수동으로 찾아서 active 클래스 추가 (fetchData에서 호출될 경우 대비)
     const buttons = document.querySelectorAll('.tab-btn');
     if(tabName === 'monthly') buttons[0].classList.add('active');
     else if(tabName === 'quarterly') buttons[1].classList.add('active');
@@ -366,6 +408,7 @@ function switchTab(tabName) {
     if (tabName !== 'search') {
         document.getElementById('specialView').style.display = 'block';
         document.getElementById('timeSelector').style.display = 'block';
+        document.getElementById('tabPeriodTotalBox').style.display = 'inline-block';
         
         let title = '조회 월 선택';
         if (tabName === 'quarterly') title = '조회 분기 선택';
@@ -376,6 +419,7 @@ function switchTab(tabName) {
     } else {
         document.getElementById('specialView').style.display = 'none';
         document.getElementById('timeSelector').style.display = 'none';
+        document.getElementById('tabPeriodTotalBox').style.display = 'none';
         document.getElementById('sidebarTitle').innerText = '업체검색 모드';
     }
 }
@@ -416,6 +460,24 @@ function formatPeriodText(type, key) {
     return key;
 }
 
+function setDatePickers() {
+    if (minDate === '99999999' || maxDate === '00000000') return;
+    const formatForInput = (d) => `${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}`;
+    const st = formatForInput(minDate);
+    const en = formatForInput(maxDate);
+    
+    const sd = document.getElementById('searchStartDate');
+    const ed = document.getElementById('searchEndDate');
+    
+    sd.min = st; sd.max = en; sd.value = st;
+    ed.min = st; ed.max = en; ed.value = en;
+}
+
+function toggleSearchDate() {
+    const isCustom = document.querySelector('input[name="searchDateRange"]:checked').value === 'custom';
+    document.getElementById('customDateWrapper').style.display = isCustom ? 'block' : 'none';
+}
+
 function processExcelData(rows) {
     ['monthly', 'quarterly', 'yearly'].forEach(type => {
         analysisData[type] = { data: {}, totalSum: {}, ranks: {} };
@@ -428,23 +490,27 @@ function processExcelData(rows) {
     const tempSet = new Set();
     companyDic = [];
 
-    for(let i = 1; i < rows.length; i++) {
+    for(let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        if (!row || row.length < 48) continue;
+        if (!row) continue;
         
-        const company = row[18] ? String(row[18]).trim() : ''; 
-        const bizNo = row[19] ? String(row[19]).trim() : '';
+        // 엑셀 열 인덱스가 아닌 항목명으로 데이터 접근
+        const company = row['업체명'] ? String(row['업체명']).trim() : ''; 
+        const bizNo = row['사업자등록번호'] ? String(row['사업자등록번호']).trim() : '';
         
         if(company && bizNo && !tempSet.has(bizNo)) {
             tempSet.add(bizNo);
             companyDic.push({name: company, bizNo: bizNo});
         }
 
-        const mas = row[25] ? String(row[25]).trim() : '';
+        const mas = row['MAS여부'] ? String(row['MAS여부']).trim() : '';
         if (mas !== 'Y') continue; 
         
-        const dateStr = row[4] ? String(row[4]).trim() : ''; 
-        const amountStr = String(row[47] || '0').replace(/,/g, '');
+        let dateStr = row['계약(납품요구)일자'] ? String(row['계약(납품요구)일자']).trim() : ''; 
+        dateStr = dateStr.replace(/[^0-9]/g, '');
+        if (dateStr.length > 8) dateStr = dateStr.substring(0, 8);
+
+        const amountStr = String(row['공급증감금액'] || '0').replace(/,/g, '');
         const amount = parseInt(amountStr, 10) || 0;
         
         if (dateStr.length >= 6) {
@@ -483,6 +549,7 @@ function processExcelData(rows) {
         }
     });
 
+    setDatePickers();
     updateSummaryView();
 }
 
@@ -592,11 +659,13 @@ function renderAnalysisTable(type) {
     const periodTotal = analysisData[type].totalSum[key];
     const prevKey = getPrevPeriodStr(type, key);
 
+    document.getElementById('tabPeriodTotalBox').innerText = `해당 기간 전체 매출: ${periodTotal.toLocaleString()}원`;
+
     const sortedCompanies = Object.keys(companies).map(c => ({
         company: c,
         amount: companies[c],
-        percent: (companies[c] / periodTotal * 100).toFixed(1)
-    })).sort((a, b) => b.amount - a.amount).slice(0, 10);
+        percent: periodTotal > 0 ? (companies[c] / periodTotal * 100).toFixed(1) : 0
+    })).sort((a, b) => b.amount - a.amount).slice(0, 20);
 
     const headerText = formatPeriodText(type, key);
     let changeText = '전월대비순위';
@@ -605,8 +674,7 @@ function renderAnalysisTable(type) {
 
     let html = `
         <div class="dashboard-header">
-            <h3 style="font-size:16px; margin:0;">${headerText} 매출 상위 10개 업체</h3>
-            <div class="month-total-box">해당 기간 전체 매출: ${periodTotal.toLocaleString()}원</div>
+            <h3 style="font-size:16px; margin:0;">${headerText} 매출 상위 업체</h3>
         </div>
     `;
     
@@ -634,7 +702,9 @@ function renderAnalysisTable(type) {
             rankChangeHtml = `<span class="rank-same">-</span>`;
         }
 
-        html += `<tr>
+        const isHidden = index >= 10 ? 'style="display:none;" class="extra-row"' : '';
+
+        html += `<tr ${isHidden}>
                     <td>${currRank}</td>
                     <td>${c.company}</td>
                     <td class="amount">${c.amount.toLocaleString()}</td>
@@ -643,8 +713,22 @@ function renderAnalysisTable(type) {
                  </tr>`;
     });
     
+    if (sortedCompanies.length > 10) {
+        html += `<tr id="loadMoreRow">
+                    <td colspan="5" style="text-align: center; background: #f8f9fa;">
+                        <button onclick="loadMoreRows(this)" style="padding:8px 16px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer; font-family:'Pretendard', sans-serif; font-size:13px; font-weight:bold; color:#555;">더보기 ▼</button>
+                    </td>
+                 </tr>`;
+    }
+
     html += `</table>`;
     container.innerHTML = html;
+}
+
+window.loadMoreRows = function(btn) {
+    const tbody = btn.closest('tbody') || btn.closest('table');
+    tbody.querySelectorAll('.extra-row').forEach(row => row.style.display = 'table-row');
+    btn.closest('tr').style.display = 'none';
 }
 
 document.getElementById('companySearchInput').addEventListener('input', function() {
@@ -696,31 +780,46 @@ function searchCompany() {
 
     document.getElementById('autocompleteList').style.display = 'none';
 
+    const isCustomDate = document.querySelector('input[name="searchDateRange"]:checked').value === 'custom';
+    let customMin = '00000000';
+    let customMax = '99999999';
+
+    if (isCustomDate) {
+        const sdVal = document.getElementById('searchStartDate').value.replace(/-/g, '');
+        const edVal = document.getElementById('searchEndDate').value.replace(/-/g, '');
+        if(sdVal) customMin = sdVal;
+        if(edVal) customMax = edVal;
+    }
+
     const companyData = [];
     let totalCompanyAmount = 0;
     let monthlyData = {};
     let targetCompanyName = '';
     let targetBizNo = '';
 
-    for (let i = 1; i < rawDataRows.length; i++) {
+    for (let i = 0; i < rawDataRows.length; i++) {
         const row = rawDataRows[i];
-        if (!row || row.length < 48) continue;
+        if (!row) continue;
         
-        const company = row[18] ? String(row[18]).trim() : '';
-        const mas = row[25] ? String(row[25]).trim() : '';
+        // 항목명(Key)으로 데이터 접근
+        const company = row['업체명'] ? String(row['업체명']).trim() : '';
+        const mas = row['MAS여부'] ? String(row['MAS여부']).trim() : '';
+        let dateStr = row['계약(납품요구)일자'] ? String(row['계약(납품요구)일자']).trim() : '';
+        dateStr = dateStr.replace(/[^0-9]/g, '');
+        if (dateStr.length > 8) dateStr = dateStr.substring(0, 8);
         
-        if (company.includes(searchTerm)) {
+        const isWithinRange = (!isCustomDate) || (dateStr >= customMin && dateStr <= customMax);
+        
+        if (company.includes(searchTerm) && isWithinRange) {
             if (!targetCompanyName) {
                 targetCompanyName = company;
-                targetBizNo = row[19] ? String(row[19]).trim() : '';
+                targetBizNo = row['사업자등록번호'] ? String(row['사업자등록번호']).trim() : '';
             }
 
-            const dateStr = row[4] ? String(row[4]).trim() : '';
-            // 수요기관명 반영 (J열 = 인덱스 9)
-            const demandInstitution = row[9] ? String(row[9]).trim() : ''; 
-            const productName = row[17] ? String(row[17]).trim() : ''; 
-            const quantity = row[45] ? String(row[45]).trim() : '0'; 
-            const amount = parseInt(String(row[47] || '0').replace(/,/g, ''), 10) || 0;
+            const demandInstitution = row['수요기관'] ? String(row['수요기관']).trim() : ''; 
+            const productName = row['품목'] ? String(row['품목']).trim() : ''; 
+            const quantity = row['계약납품증감수량'] ? String(row['계약납품증감수량']).trim() : '0'; 
+            const amount = parseInt(String(row['공급증감금액'] || '0').replace(/,/g, ''), 10) || 0;
             
             companyData.push({
                 date: dateStr,
@@ -741,35 +840,47 @@ function searchCompany() {
 
     if (companyData.length === 0) {
         document.getElementById('searchResultContainer').innerHTML = `
-            <div class="no-data">검색 결과가 없습니다.</div>
+            <div class="no-data">선택한 기간 내 검색 결과가 없습니다.</div>
         `;
         return;
     }
 
     const allCompanies = {};
-    for (let i = 1; i < rawDataRows.length; i++) {
+    let periodTotalMASAmount = 0;
+
+    for (let i = 0; i < rawDataRows.length; i++) {
         const row = rawDataRows[i];
-        if (!row || row.length < 48) continue;
-        const mas = row[25] ? String(row[25]).trim() : '';
+        if (!row) continue;
+        
+        const mas = row['MAS여부'] ? String(row['MAS여부']).trim() : '';
         if (mas !== 'Y') continue;
         
-        const company = row[18] ? String(row[18]).trim() : '';
-        const amount = parseInt(String(row[47] || '0').replace(/,/g, ''), 10) || 0;
-        allCompanies[company] = (allCompanies[company] || 0) + amount;
+        let dateStr = row['계약(납품요구)일자'] ? String(row['계약(납품요구)일자']).trim() : '';
+        dateStr = dateStr.replace(/[^0-9]/g, '');
+        if (dateStr.length > 8) dateStr = dateStr.substring(0, 8);
+
+        const isWithinRange = (!isCustomDate) || (dateStr >= customMin && dateStr <= customMax);
+
+        if (isWithinRange) {
+            const company = row['업체명'] ? String(row['업체명']).trim() : '';
+            const amount = parseInt(String(row['공급증감금액'] || '0').replace(/,/g, ''), 10) || 0;
+            allCompanies[company] = (allCompanies[company] || 0) + amount;
+            periodTotalMASAmount += amount;
+        }
     }
     
     const rankList = Object.keys(allCompanies)
         .map(name => ({ name, amount: allCompanies[name] }))
         .sort((a, b) => b.amount - a.amount);
     
-    const companyRank = rankList.findIndex(c => c.name.includes(searchTerm)) + 1;
+    const companyRank = rankList.findIndex(c => c.name.includes(targetCompanyName || searchTerm)) + 1;
 
-    renderSearchResult(targetCompanyName || searchTerm, targetBizNo, companyData, totalCompanyAmount, companyRank, monthlyData);
+    renderSearchResult(targetCompanyName || searchTerm, targetBizNo, companyData, totalCompanyAmount, companyRank, monthlyData, periodTotalMASAmount);
 }
 
-function renderSearchResult(companyName, bizNo, data, totalAmount, rank, monthlyData) {
+function renderSearchResult(companyName, bizNo, data, totalAmount, rank, monthlyData, periodTotalMASAmount) {
     const container = document.getElementById('searchResultContainer');
-    const share = totalMASAmount > 0 ? ((totalAmount / totalMASAmount) * 100).toFixed(2) : 0;
+    const share = periodTotalMASAmount > 0 ? ((totalAmount / periodTotalMASAmount) * 100).toFixed(2) : 0;
     
     let html = `
         <div class="company-header">
@@ -778,14 +889,14 @@ function renderSearchResult(companyName, bizNo, data, totalAmount, rank, monthly
         </div>
         <div class="company-analysis">
             <div class="analysis-card">
-                <h4>업체 총 매출액 (MAS)</h4>
+                <h4>조회 기간 내 업체 총 매출액 (MAS)</h4>
                 <div class="value">${totalAmount.toLocaleString()}원</div>
-                <div class="sub-value">전체 대비 ${share}%</div>
+                <div class="sub-value">해당 기간 전체 대비 ${share}%</div>
             </div>
             <div class="analysis-card">
-                <h4>누적 매출 순위</h4>
-                <div class="value">${rank}위</div>
-                <div class="sub-value">전체 ${Object.keys(uniqueCompanies).length}개 업체 중</div>
+                <h4>조회 기간 내 매출 순위</h4>
+                <div class="value">${rank > 0 ? rank + '위' : '-'}</div>
+                <div class="sub-value">해당 기간 매출 발생 업체 중</div>
             </div>
             <div class="analysis-card">
                 <h4>총 거래 건수</h4>
@@ -807,7 +918,7 @@ function renderSearchResult(companyName, bizNo, data, totalAmount, rank, monthly
             <tr>
                 <th style="width: 10%;">날짜</th>
                 <th style="width: 20%;">수요기관</th>
-                <th style="width: 28%;">물품식별명</th>
+                <th style="width: 28%;">품목</th>
                 <th style="width: 7%;">계약납품증감수량</th>
                 <th class="amount" style="width: 20%;">공급금액(원)</th>
                 <th style="width: 15%;">MAS</th>
