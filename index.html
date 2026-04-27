@@ -2,9 +2,12 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>품명별 매출분석</title>
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css?v=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js?v=1.0"></script>
     <style>
         body { font-family: 'Pretendard', 'Malgun Gothic', sans-serif; background-color: #f4f7f6; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
@@ -267,6 +270,9 @@
 </div>
 
 <script>
+// 앱 버전 변수 추가
+const APP_VERSION = '1.0';
+
 const API_ENDPOINTS = {
     '영상정보디스플레이장치': 'https://script.google.com/macros/s/AKfycbzOw5M6Q36IoA_01w5MpeNRYZG8xm9emToz0sRZVTH9qDICcfwSlI7bpmYX3VN-LZlqHg/exec',
     '안내전광판': 'https://script.google.com/macros/s/AKfycbyd98RkQBj6xVw0sWGltcHuCc85zEn_0RASVCpaxb6XgdLUjuouJY2JIiY3PD71AGg/exec',
@@ -332,7 +338,6 @@ function resetApp() {
     document.getElementById('searchResultContainer').innerHTML = '';
     document.getElementById('companySearchInput').value = '';
 
-    // 탭 초기화 설정 추가 (검색화면 제거)
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('monthlyTab').classList.add('active');
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -364,6 +369,7 @@ async function fetchData(category) {
     document.getElementById('dashboardTitle').innerText = `${category} 매출분석`;
 
     try {
+        // API 요청은 최신 데이터를 위해 타임스탬프 유지
         const url = API_ENDPOINTS[category] + '?t=' + new Date().getTime();
         const response = await fetch(url);
         let data = await response.json();
@@ -598,8 +604,7 @@ function handleTimeSelect(type, key, btnElement) {
     renderAnalysisTable(type);
 }
 
-// 자동 업체 검색 실행 함수
-window.triggerCompanySearch = function(companyName) {
+function triggerCompanySearch(companyName) {
     switchTab('search');
     document.getElementById('companySearchInput').value = companyName;
     document.querySelector('input[name="searchDateRange"][value="all"]').checked = true;
@@ -648,7 +653,6 @@ function renderSpecialCards(type, key) {
         
         const card = document.createElement('div');
         card.className = `special-card ${pastelClasses[i % 4]}`;
-        // 업체명에 클릭 연동 처리
         card.innerHTML = `
             <span class="rank-badge">${i + 1}위</span>
             <h4 class="clickable-company" onclick="triggerCompanySearch('${data.name}')">${data.name}</h4>
@@ -671,7 +675,6 @@ function renderAnalysisTable(type) {
     const periodTotal = analysisData[type].totalSum[key];
     const prevKey = getPrevPeriodStr(type, key);
 
-    // 탭에 맞는 단어 처리 (월/분기/연도)
     let periodLabel = '월';
     if (type === 'quarterly') periodLabel = '분기';
     if (type === 'yearly') periodLabel = '연도';
@@ -721,7 +724,6 @@ function renderAnalysisTable(type) {
 
         const isHidden = index >= 10 ? 'style="display:none;" class="extra-row"' : '';
 
-        // 업체명에 클릭 연동 처리
         html += `<tr ${isHidden}>
                     <td>${currRank}</td>
                     <td class="clickable-company" onclick="triggerCompanySearch('${c.company}')">${c.company}</td>
